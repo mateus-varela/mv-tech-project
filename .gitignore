@@ -2,3 +2,5 @@ node_modules/
 db.json
 .env
 .DS_Store
+DOCUMENTACAO.md
+DOCUMENTACAO.docx
