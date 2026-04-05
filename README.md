@@ -1,35 +1,32 @@
-# MV Tech — Sistema Gerenciador de Tarefas Online
+# MV Tech — Sistema Gerenciador de Tarefas
 
-Sistema web de gerenciamento de tarefas desenvolvido como projeto integrador para a Pontifícia Universidade Católica de Goiás (PUC-GO) — Análise e Desenvolvimento de Sistemas.
+Sistema web de gerenciamento de projetos e tarefas desenvolvido para a **MV Tech Consultoria**, especializada em DevOps e infraestrutura em nuvem.
 
-## Sobre o Projeto
+## Sobre
 
-A **MV Tech** é uma consultoria especializada em DevOps que atende múltiplos clientes simultaneamente. A ausência de uma ferramenta centralizada para acompanhar as demandas de cada cliente gerava dificuldades no controle de prazos, na distribuição de atividades e na visibilidade geral do andamento dos projetos.
-
-Este sistema foi desenvolvido para resolver esse problema, permitindo organizar cada cliente como um projeto independente, gerenciar tarefas via quadro Kanban e acompanhar prazos por um calendário integrado.
+A MV Tech atende múltiplos clientes simultaneamente, cada um com projetos, prazos e demandas distintas. Este sistema centraliza o controle de todas as atividades em um único lugar, com visão clara do que está pendente, em andamento ou concluído — por projeto e por responsável.
 
 ## Funcionalidades
 
-- **Autenticação** — Cadastro e login de usuários com sessão via localStorage
-- **Projetos** — Criação, edição e exclusão de projetos com prazo, membros e métricas de progresso
+- **Autenticação** — Cadastro e login com sessão persistente
+- **Projetos** — Criação e edição com prazo, membros e métricas de progresso
 - **Kanban** — Quadro com colunas *A Fazer*, *Em Andamento* e *Concluído*, com drag & drop
-- **Tarefas** — Criação com título, descrição, responsável, prazo, horas estimadas e anotações
-- **Calendário** — Visualização de prazos de tarefas e projetos por data
-- **Filtro por responsável** — Filtrar tarefas do Kanban por membro da equipe
-- **Indicador de atraso** — Cards com prazo vencido ficam destacados em vermelho
-- **Métricas no dashboard** — Barra de progresso, % de conclusão, horas estimadas e tarefas atrasadas por projeto
-- **Impressão do board** — Exportar o Kanban para impressão
+- **Tarefas** — Título, descrição, responsável, prazo, horas estimadas e anotações com histórico
+- **Calendário** — Visualização mensal de prazos de tarefas e projetos
+- **Filtro por responsável** — Visão individual por membro da equipe
+- **Indicador de atraso** — Cards com prazo vencido destacados visualmente
+- **Métricas no dashboard** — Progresso, % de conclusão, horas estimadas e alertas de atraso por projeto
+- **Impressão do board** — Exportar o Kanban formatado para papel
 
 ## Stack
 
 | Camada | Tecnologia |
 |--------|-----------|
 | Front-end | HTML5, CSS3, JavaScript (Vanilla) |
-| Estilização | Bootstrap 5, CSS customizado (glassmorphism) |
+| Estilização | Bootstrap 5 |
 | Date picker | Flatpickr |
-| Back-end (mock) | json-server |
+| Servidor | json-server |
 | Persistência | localStorage |
-| Fonte | Plus Jakarta Sans (Google Fonts) |
 
 ## Como Executar
 
@@ -41,8 +38,8 @@ Este sistema foi desenvolvido para resolver esse problema, permitindo organizar 
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/mateus-varela/mv-tech-tasks.git
-cd mv-tech-tasks
+git clone https://github.com/mateus-varela/mv-tech-project.git
+cd mv-tech-project
 
 # 2. Instale as dependências
 npm install
@@ -56,39 +53,22 @@ npm start
 
 Acesse em: **http://localhost:3001**
 
-> O sistema usa `localStorage` para persistência dos dados. O `db.json` é utilizado apenas para servir os arquivos estáticos via json-server.
-
-## Estrutura de Arquivos
+## Estrutura
 
 ```
-mv-tech-tasks/
-├── public/              # Arquivos servidos pelo json-server
+mv-tech-project/
+├── public/              # Arquivos servidos pelo servidor
 │   ├── index.html       # Login / Cadastro
-│   ├── dashboard.html   # Lista de projetos
+│   ├── dashboard.html   # Painel de projetos
 │   ├── kanban.html      # Quadro Kanban
 │   ├── calendario.html  # Calendário de prazos
-│   ├── css/
-│   │   └── style.css    # Estilos globais
-│   └── js/
-│       └── app.js       # Lógica da aplicação
-├── db.example.json      # Template do banco de dados
+│   ├── css/style.css
+│   └── js/app.js
+├── db.example.json
 ├── package.json
 └── README.md
 ```
 
-## Telas do Sistema
-
-| Tela | Descrição |
-|------|-----------|
-| `index.html` | Login e cadastro com tema dark glassmorphism |
-| `dashboard.html` | Visão geral dos projetos com métricas e progresso |
-| `kanban.html` | Quadro Kanban com drag & drop e filtro por responsável |
-| `calendario.html` | Calendário mensal com prazos de tarefas e projetos |
-
 ## Autor
 
-**Mateus Varela** — MV Tech Consultoria DevOps
-
----
-
-Projeto Integrador III-B — PUC-GO — 2026
+**Mateus Varela** — [MV Tech](https://github.com/mateus-varela)
