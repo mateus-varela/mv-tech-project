@@ -1,0 +1,11 @@
+{
+  "name": "mv-tech-tasks",
+  "version": "1.0.0",
+  "description": "Sistema Gerenciador de Tarefas Online — MV Tech",
+  "scripts": {
+    "start": "json-server --watch db.json --port 3001 --static public"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4"
+  }
+}

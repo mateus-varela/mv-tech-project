@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanban — MV Tech</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+</head>
+<body>
+  <nav class="navbar px-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="dashboard.html" class="btn btn-outline-secondary btn-sm">← Voltar</a>
+      <a href="dashboard.html" class="navbar-brand fw-bold mb-0">MV<span class="brand-sep"></span><span>Tech</span></a>
+      <span id="project-name" class="text-muted"></span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary btn-sm" onclick="printBoard()" title="Imprimir board">🖨 Imprimir</button>
+      <a href="calendario.html" class="btn btn-outline-secondary btn-sm">Calendário</a>
+      <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+    </div>
+  </nav>
+
+  <!-- Filtro por responsável -->
+  <div class="kanban-filter-bar px-4 py-2" id="filter-bar"></div>
+
+  <div class="container-fluid py-3 px-4">
+    <div class="kanban-board" id="kanban-board">
+
+      <!-- Coluna: A Fazer -->
+      <div class="kanban-col col-todo">
+        <div class="kanban-col-header">
+          <span class="col-dot"></span>A Fazer
+          <span class="col-count" id="count-todo">0</span>
+        </div>
+        <div class="kanban-tasks" id="col-todo"
+          ondragover="allowDrop(event)"
+          ondrop="drop(event, 'todo')"></div>
+        <div class="kanban-add-area">
+          <button class="kanban-add-btn" id="add-btn-todo" onclick="showAddForm('todo')">Adicionar tarefa</button>
+          <div class="kanban-inline-form d-none" id="form-todo">
+            <input type="text" class="kanban-inline-input" id="input-todo"
+              placeholder="Título da tarefa..."
+              onkeydown="handleAddKey(event, 'todo')">
+            <div class="kanban-inline-actions">
+              <button class="btn btn-primary-custom btn-sm" onclick="addInlineTask('todo')">Adicionar</button>
+              <button class="kanban-cancel-btn" onclick="hideAddForm('todo')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna: Em Andamento -->
+      <div class="kanban-col col-doing">
+        <div class="kanban-col-header">
+          <span class="col-dot"></span>Em Andamento
+          <span class="col-count" id="count-doing">0</span>
+        </div>
+        <div class="kanban-tasks" id="col-doing"
+          ondragover="allowDrop(event)"
+          ondrop="drop(event, 'doing')"></div>
+        <div class="kanban-add-area">
+          <button class="kanban-add-btn" id="add-btn-doing" onclick="showAddForm('doing')">Adicionar tarefa</button>
+          <div class="kanban-inline-form d-none" id="form-doing">
+            <input type="text" class="kanban-inline-input" id="input-doing"
+              placeholder="Título da tarefa..."
+              onkeydown="handleAddKey(event, 'doing')">
+            <div class="kanban-inline-actions">
+              <button class="btn btn-primary-custom btn-sm" onclick="addInlineTask('doing')">Adicionar</button>
+              <button class="kanban-cancel-btn" onclick="hideAddForm('doing')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna: Concluído -->
+      <div class="kanban-col col-done">
+        <div class="kanban-col-header">
+          <span class="col-dot"></span>Concluído
+          <span class="col-count" id="count-done">0</span>
+        </div>
+        <div class="kanban-tasks" id="col-done"
+          ondragover="allowDrop(event)"
+          ondrop="drop(event, 'done')"></div>
+        <div class="kanban-add-area">
+          <button class="kanban-add-btn" id="add-btn-done" onclick="showAddForm('done')">Adicionar tarefa</button>
+          <div class="kanban-inline-form d-none" id="form-done">
+            <input type="text" class="kanban-inline-input" id="input-done"
+              placeholder="Título da tarefa..."
+              onkeydown="handleAddKey(event, 'done')">
+            <div class="kanban-inline-actions">
+              <button class="btn btn-primary-custom btn-sm" onclick="addInlineTask('done')">Adicionar</button>
+              <button class="kanban-cancel-btn" onclick="hideAddForm('done')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal Detalhes da Tarefa -->
+  <div class="modal fade" id="modalTask" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-task-title-label">Detalhes da Tarefa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modal-task-id">
+          <div class="mb-3">
+            <label class="form-label">Título</label>
+            <input type="text" id="modal-task-title" class="form-control" placeholder="Título da tarefa">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descrição</label>
+            <textarea id="modal-task-desc" class="form-control" rows="3" placeholder="Descreva a tarefa..."></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Responsável</label>
+              <input type="text" id="modal-task-assignee" class="form-control" placeholder="Nome do responsável">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prazo</label>
+              <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="modal-task-deadline" class="form-control" placeholder="Selecione a data" readonly>
+                <button type="button" class="deadline-clear-btn" onclick="deadlinePicker.clear()" title="Limpar data">✕</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Status</label>
+              <select id="modal-task-status" class="form-select">
+                <option value="todo">A Fazer</option>
+                <option value="doing">Em Andamento</option>
+                <option value="done">Concluído</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Horas estimadas</label>
+              <input type="number" id="modal-task-hours" class="form-control" placeholder="Ex: 4" min="0" step="0.5">
+            </div>
+          </div>
+
+          <!-- Anotações -->
+          <div class="mb-1">
+            <label class="form-label">Anotações</label>
+            <div id="modal-notes-list" class="notes-list mb-2"></div>
+            <div class="d-flex gap-2">
+              <input type="text" id="modal-note-input" class="form-control" placeholder="Adicionar anotação...">
+              <button type="button" class="btn btn-primary-custom btn-sm" style="white-space:nowrap" onclick="addNote()">+ Nota</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-danger btn-sm me-auto"
+            onclick="removeTaskFromModal()">Excluir tarefa</button>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary-custom" onclick="saveTaskModal()">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    requireAuth();
+
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('project');
+    if (!projectId) window.location.href = 'dashboard.html';
+
+    const project = getProjects().find(p => p.id === projectId);
+    if (!project) window.location.href = 'dashboard.html';
+
+    document.getElementById('project-name').textContent = project.name;
+    document.title = `${project.name} — MV Tech`;
+
+    let draggedId = null;
+    let activeFilter = 'all';
+
+    function renderFilterBar() {
+      const tasks = getTasks().filter(t => t.projectId === projectId);
+      const assignees = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+      const bar = document.getElementById('filter-bar');
+      if (assignees.length === 0) { bar.innerHTML = ''; return; }
+
+      bar.innerHTML = `
+        <span style="font-size:12px;color:rgba(255,255,255,0.4);margin-right:8px">Filtrar:</span>
+        <button class="filter-btn${activeFilter === 'all' ? ' active' : ''}" onclick="setFilter('all')">Todos</button>
+        ${assignees.map(a => `
+          <button class="filter-btn${activeFilter === a ? ' active' : ''}" onclick="setFilter('${a}')">👤 ${a}</button>
+        `).join('')}
+      `;
+    }
+
+    function setFilter(val) {
+      activeFilter = val;
+      renderFilterBar();
+      renderKanban();
+    }
+
+    function renderKanban() {
+      const allTasks = getTasks().filter(t => t.projectId === projectId);
+      const tasks = activeFilter === 'all' ? allTasks : allTasks.filter(t => t.assignee === activeFilter);
+      const statuses = ['todo', 'doing', 'done'];
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      statuses.forEach(status => {
+        const col = document.getElementById(`col-${status}`);
+        const colTasks = tasks.filter(t => t.status === status);
+
+        const countEl = document.getElementById(`count-${status}`);
+        if (countEl) countEl.textContent = colTasks.length;
+
+        if (colTasks.length === 0) {
+          col.innerHTML = '<p class="text-muted text-center small mt-3">Sem tarefas</p>';
+          return;
+        }
+
+        col.innerHTML = colTasks.map(t => {
+          const deadline = t.deadline ? new Date(t.deadline + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+          const isOverdue = t.deadline && t.deadline < todayStr && t.status !== 'done';
+          const hours = t.estimatedHours ? `<span class="task-hours">⏱ ${t.estimatedHours}h</span>` : '';
+          const notesCount = (t.notes || []).length;
+          return `
+            <div class="task-card${isOverdue ? ' task-overdue' : ''}" draggable="true"
+              ondragstart="dragStart(event, '${t.id}')"
+              ondragend="dragEnd(event)"
+              onclick="openTaskModal('${t.id}')">
+              <button class="task-delete" onclick="event.stopPropagation(); removeTask('${t.id}')">✕</button>
+              <h6>${t.title}</h6>
+              ${t.description ? `<p>${t.description}</p>` : ''}
+              <div class="task-meta">
+                ${t.assignee ? `<span class="badge">👤 ${t.assignee}</span>` : ''}
+                ${hours}
+                ${notesCount > 0 ? `<span class="task-notes-count">💬 ${notesCount}</span>` : ''}
+              </div>
+              ${deadline ? `<div class="task-deadline${isOverdue ? ' overdue' : ''}">
+                ${isOverdue ? '🔴' : '📅'} ${deadline}${isOverdue ? ' · Atrasada' : ''}
+              </div>` : ''}
+            </div>`;
+        }).join('');
+      });
+    }
+
+    // ── Inline Add (Trello-style) ──
+    function showAddForm(status) {
+      document.getElementById(`add-btn-${status}`).classList.add('d-none');
+      document.getElementById(`form-${status}`).classList.remove('d-none');
+      document.getElementById(`input-${status}`).focus();
+    }
+
+    function hideAddForm(status) {
+      document.getElementById(`add-btn-${status}`).classList.remove('d-none');
+      document.getElementById(`form-${status}`).classList.add('d-none');
+      document.getElementById(`input-${status}`).value = '';
+    }
+
+    function addInlineTask(status) {
+      const input = document.getElementById(`input-${status}`);
+      const title = input.value.trim();
+      if (!title) { input.focus(); return; }
+      createTask(projectId, title, '', '', '', status);
+      hideAddForm(status);
+      renderKanban();
+    }
+
+    function handleAddKey(event, status) {
+      if (event.key === 'Enter') addInlineTask(status);
+      if (event.key === 'Escape') hideAddForm(status);
+    }
+
+    // Fechar form ao clicar fora
+    document.addEventListener('click', e => {
+      ['todo', 'doing', 'done'].forEach(status => {
+        const form = document.getElementById(`form-${status}`);
+        if (!form.classList.contains('d-none') && !form.contains(e.target) && e.target.id !== `add-btn-${status}`) {
+          hideAddForm(status);
+        }
+      });
+    });
+
+    function removeTask(id) {
+      if (confirm('Excluir esta tarefa?')) {
+        deleteTask(id);
+        renderKanban();
+      }
+    }
+
+
+
+    // ── Drag and Drop ──
+    function dragStart(event, id) {
+      draggedId = id;
+      setTimeout(() => event.target.classList.add('dragging'), 0);
+    }
+
+    function dragEnd(event) {
+      event.target.classList.remove('dragging');
+    }
+
+    function allowDrop(event) {
+      event.preventDefault();
+      event.currentTarget.classList.add('drag-over');
+    }
+
+    function drop(event, status) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('drag-over');
+      if (draggedId) {
+        updateTaskStatus(draggedId, status);
+        draggedId = null;
+        renderKanban();
+      }
+    }
+
+    document.querySelectorAll('.kanban-tasks').forEach(col => {
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+    });
+
+    // ── Task Detail Modal ──
+    const taskModal = new bootstrap.Modal(document.getElementById('modalTask'));
+
+    // Flatpickr — calendário dark no campo de prazo
+    const deadlinePicker = flatpickr('#modal-task-deadline', {
+      locale: 'pt',
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'd/m/Y',
+      allowInput: false,
+      disableMobile: true,
+    });
+
+    function openTaskModal(id) {
+      const task = getTasks().find(t => t.id === id);
+      if (!task) return;
+      document.getElementById('modal-task-id').value = task.id;
+      document.getElementById('modal-task-title').value = task.title;
+      document.getElementById('modal-task-desc').value = task.description || '';
+      document.getElementById('modal-task-assignee').value = task.assignee || '';
+      document.getElementById('modal-task-hours').value = task.estimatedHours || '';
+      deadlinePicker.setDate(task.deadline || null, false);
+      document.getElementById('modal-task-status').value = task.status;
+      renderNotes(task.notes || []);
+      document.getElementById('modal-note-input').value = '';
+      taskModal.show();
+    }
+
+    function renderNotes(notes) {
+      const list = document.getElementById('modal-notes-list');
+      if (notes.length === 0) { list.innerHTML = ''; return; }
+      list.innerHTML = notes.map(n => {
+        const date = new Date(n.createdAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+        return `<div class="note-item"><span class="note-date">${date}</span><span class="note-text">${n.text}</span></div>`;
+      }).reverse().join('');
+    }
+
+    function addNote() {
+      const input = document.getElementById('modal-note-input');
+      const text = input.value.trim();
+      if (!text) { input.focus(); return; }
+      const id = document.getElementById('modal-task-id').value;
+      const tasks = getTasks();
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      if (!task.notes) task.notes = [];
+      task.notes.push({ text, createdAt: new Date().toISOString() });
+      saveTasks(tasks);
+      renderNotes(task.notes);
+      input.value = '';
+      input.focus();
+    }
+
+    function saveTaskModal() {
+      const id = document.getElementById('modal-task-id').value;
+      const title = document.getElementById('modal-task-title').value.trim();
+      if (!title) { alert('O título é obrigatório.'); return; }
+      updateTask(id, {
+        title,
+        description: document.getElementById('modal-task-desc').value.trim(),
+        assignee: document.getElementById('modal-task-assignee').value.trim(),
+        deadline: document.getElementById('modal-task-deadline').value,
+        status: document.getElementById('modal-task-status').value,
+        estimatedHours: document.getElementById('modal-task-hours').value || null,
+      });
+      taskModal.hide();
+      renderFilterBar();
+      renderKanban();
+    }
+
+    function removeTaskFromModal() {
+      const id = document.getElementById('modal-task-id').value;
+      if (confirm('Excluir esta tarefa?')) {
+        deleteTask(id);
+        taskModal.hide();
+        renderFilterBar();
+        renderKanban();
+      }
+    }
+
+    // ── Imprimir board ──
+    function printBoard() {
+      window.print();
+    }
+
+    // ── Enter para adicionar nota ──
+    document.getElementById('modal-note-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addNote();
+    });
+
+    renderFilterBar();
+    renderKanban();
+  </script>
+</body>
+</html>

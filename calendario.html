@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendário — MV Tech</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar px-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="dashboard.html" class="btn btn-outline-secondary btn-sm">← Voltar</a>
+      <a href="dashboard.html" class="navbar-brand fw-bold mb-0">MV<span class="brand-sep"></span><span>Tech</span></a>
+    </div>
+    <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+  </nav>
+
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="page-header">
+        <div class="page-header-eyebrow">prazos &amp; agenda</div>
+        <h1 class="page-title">Calendário<span class="page-title-accent"></span></h1>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)">‹</button>
+        <span id="month-label" class="fw-bold px-2"></span>
+        <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <div class="calendar-grid mb-2">
+      <div class="cal-header">Dom</div>
+      <div class="cal-header">Seg</div>
+      <div class="cal-header">Ter</div>
+      <div class="cal-header">Qua</div>
+      <div class="cal-header">Qui</div>
+      <div class="cal-header">Sex</div>
+      <div class="cal-header">Sáb</div>
+    </div>
+
+    <div class="calendar-grid" id="calendar-days"></div>
+
+    <!-- Legenda -->
+    <div class="mt-4">
+      <h6 class="fw-bold mb-2">Todas as tarefas com prazo</h6>
+      <div id="tasks-list"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    requireAuth();
+    const user = getCurrentUser();
+
+    const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    let current = new Date();
+    let viewYear = current.getFullYear();
+    let viewMonth = current.getMonth();
+
+    function changeMonth(dir) {
+      viewMonth += dir;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      document.getElementById('month-label').textContent = `${months[viewMonth]} ${viewYear}`;
+
+      const userProjects = getProjects().filter(p => p.userId === user.id);
+      const userProjectIds = userProjects.map(p => p.id);
+      const tasks = getTasks().filter(t => userProjectIds.includes(t.projectId) && t.deadline);
+
+      const today = new Date();
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+      // Mapeia tarefas por data
+      const tasksByDate = {};
+      tasks.forEach(t => {
+        if (!tasksByDate[t.deadline]) tasksByDate[t.deadline] = [];
+        tasksByDate[t.deadline].push({ label: t.title, type: 'task' });
+      });
+
+      // Mapeia prazos de projeto por data
+      userProjects.filter(p => p.deadline).forEach(p => {
+        if (!tasksByDate[p.deadline]) tasksByDate[p.deadline] = [];
+        tasksByDate[p.deadline].push({ label: `📁 ${p.name}`, type: 'project' });
+      });
+
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+
+      let html = '';
+
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev - i}</div></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday = dateKey === todayKey;
+        const dayItems = tasksByDate[dateKey] || [];
+
+        html += `<div class="cal-day${isToday ? ' today' : ''}">
+          <div class="cal-day-num">${d}</div>
+          ${dayItems.map(item => `<div class="cal-task-badge${item.type === 'project' ? ' cal-project-badge' : ''}" title="${item.label}">${item.label}</div>`).join('')}
+        </div>`;
+      }
+
+      const total = firstDay + daysInMonth;
+      const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+      for (let d = 1; d <= remaining; d++) {
+        html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+      }
+
+      document.getElementById('calendar-days').innerHTML = html;
+
+      // Lista combinada de tarefas + prazos de projeto
+      const listEl = document.getElementById('tasks-list');
+
+      const projectDeadlines = userProjects.filter(p => p.deadline).map(p => ({
+        type: 'project', title: p.name, deadline: p.deadline, status: null
+      }));
+      const taskItems = tasks.map(t => ({
+        type: 'task', title: t.title, deadline: t.deadline, status: t.status,
+        projectName: (userProjects.find(p => p.id === t.projectId) || {}).name || ''
+      }));
+
+      const allItems = [...taskItems, ...projectDeadlines].sort((a, b) => a.deadline.localeCompare(b.deadline));
+
+      if (allItems.length === 0) {
+        listEl.innerHTML = '<p class="text-muted">Nenhuma tarefa com prazo cadastrada. Insira prazo nas tarefas para uma melhor integração do sistema.</p>';
+        return;
+      }
+
+      const statusLabel = { todo: 'A Fazer', doing: 'Em Andamento', done: 'Concluído' };
+      const statusColor = { todo: 'primary', doing: 'warning', done: 'success' };
+
+      listEl.innerHTML = allItems.map(item => {
+        const deadline = new Date(item.deadline + 'T00:00:00').toLocaleDateString('pt-BR');
+        const isOverdue = item.deadline < todayKey && item.status !== 'done' && item.type === 'task';
+        if (item.type === 'project') {
+          return `
+            <div class="cal-list-item mb-2">
+              <span class="badge flex-shrink-0" style="background:rgba(124,58,237,0.7)">📁 Prazo do Projeto</span>
+              <div class="cal-list-info">
+                <span class="cal-list-title">${item.title}</span>
+                <span class="cal-list-sub">Entrega final do projeto</span>
+              </div>
+              <span class="cal-list-date">📅 ${deadline}</span>
+            </div>`;
+        }
+        const statusBadge = isOverdue
+          ? '<span class="badge bg-danger flex-shrink-0">⚠ Atrasada</span>'
+          : `<span class="badge bg-${statusColor[item.status]} flex-shrink-0">${statusLabel[item.status]}</span>`;
+        return `
+          <div class="cal-list-item mb-2">
+            ${statusBadge}
+            <div class="cal-list-info">
+              <span class="cal-list-title">${item.title}</span>
+              <span class="cal-list-sub">Tarefa do projeto <strong style="color:rgba(255,255,255,0.55);font-weight:600">${item.projectName}</strong></span>
+            </div>
+            <span class="cal-list-date">📅 ${deadline}</span>
+          </div>`;
+      }).join('');
+    }
+
+    renderCalendar();
+  </script>
+</body>
+</html>
